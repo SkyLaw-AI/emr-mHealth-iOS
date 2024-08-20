@@ -507,6 +507,8 @@ extension HKWorkout {
       return "Transition"
     case .other:
       return "Other"
+    case .underwaterDiving:
+      return "Underwater Diving"
     @unknown default:
       return "Unknown"
     }
