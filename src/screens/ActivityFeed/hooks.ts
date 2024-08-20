@@ -5,11 +5,8 @@ import { HealthKitQueryController } from 'services/healthkit';
 
 import { Activity, describeAcitivitySummary, makeActivitiesCalendar } from './utils';
 import { StateTree } from 'models';
-import { ActivitySummary, Workout } from 'models/activity';
+import { ActivitySummary, Steps, Workout } from 'models/activity';
 import { ServiceStatus } from 'models/service-status';
-import { useService } from 'fhir-react/src/hooks/service';
-import { getUserIdentity } from 'services/auth';
-import { uploadWorkoutHistory } from 'services/datastream';
 
 export type ActivityFeedItem = Activity;
 
@@ -20,15 +17,8 @@ export interface ActivityFeedSection {
 }
 
 export function useActivityFeed(activity: StateTree['activity'], serviceStatus: StateTree['serviceStatus']) {
-    useService(async () => {
-        const identity = await getUserIdentity();
-        const uploadWorkoutsResponse = await uploadWorkoutHistory(identity?.jwt, activity.workouts);
-
-        return uploadWorkoutsResponse;
-    }, []);
-
     return {
-        activities: convertToActivitySections(activity.workouts, activity.summary),
+        activities: convertToActivitySections([...activity.workouts, ...activity.steps], activity.summary),
         isRunning: serviceStatus.healthkit === ServiceStatus.Running ? true : false,
         start: HealthKitQueryController.start,
         stop: HealthKitQueryController.stop,
@@ -49,12 +39,15 @@ export function useActivityFeed(activity: StateTree['activity'], serviceStatus: 
     };
 }
 
-function convertToActivitySections(workouts: readonly Workout[], summary?: ActivitySummary) {
-    return Array.from(makeActivitiesCalendar(workouts.slice().reverse())).reduce<ActivityFeedSection[]>(
-        (sections, [date, oneDayActivities]) => {
-            sections.push({ title: date, data: oneDayActivities, summary: describeAcitivitySummary(summary) });
+function convertToActivitySections(samples: readonly (Workout | Steps)[], summary?: ActivitySummary) {
+    return Array.from(makeActivitiesCalendar(samples.slice().reverse()))
+        .reduce<ActivityFeedSection[]>((sections, [date, oneDayActivities]) => {
+            sections.push({
+                title: date,
+                data: oneDayActivities.sort((a, b) => (a.date < b.date ? 1 : -1)),
+                summary: describeAcitivitySummary(summary),
+            });
             return sections;
-        },
-        [],
-    );
+        }, [])
+        .sort((a, b) => (a.data[0]?.date < b.data[0]?.date ? 1 : -1));
 }

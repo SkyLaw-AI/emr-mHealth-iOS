@@ -1,6 +1,6 @@
 import { DATASTREAM_API_URL } from 'config';
 import { stateTree } from 'models';
-import { Workout } from 'models/activity';
+import { ActivitySampleCategory, Steps, Workout } from 'models/activity';
 import { ServiceStatus } from 'models/service-status';
 import { HealthKitEventRegistry, HealthKitQuery, subscribeHealthKitEvents } from 'services/healthkit';
 import { postLocalNotification } from 'services/notifications';
@@ -12,8 +12,10 @@ import { FetchError, service as fetchService } from 'fhir-react/src/services/fet
 export function attachActivityHistoryDataStream() {
     HealthKitQuery.activitySummary().then(stateTree.activity.updateSummary);
 
-    subscribeHealthKitEvents(HealthKitEventRegistry.SampleCreated, async (workouts: Workout[]) => {
+    subscribeHealthKitEvents(HealthKitEventRegistry.SampleCreated, async (samples: (Workout | Steps)[]) => {
         const identity = await getUserIdentity();
+        const workouts = samples.filter((s): s is Workout => s.category === ActivitySampleCategory.Workout);
+        const steps = samples.filter((s): s is Steps => s.category === ActivitySampleCategory.Steps);
 
         if (DATASTREAM_API_URL !== undefined) {
             const uploadWorkoutHistoryResponse = await uploadWorkoutHistory(identity?.jwt, workouts);
@@ -25,6 +27,7 @@ export function attachActivityHistoryDataStream() {
             }
         }
         stateTree.activity.pushWorkouts(workouts);
+        stateTree.activity.pushSteps(steps);
 
         await HealthKitQuery.activitySummary().then(async (summary) => {
             if (identity && stateTree.user.patient && summary) {
@@ -42,10 +45,12 @@ export function attachActivityHistoryDataStream() {
             stateTree.activity.updateSummary(summary);
         });
 
-        postLocalNotification({
-            title: 'New Workout',
-            body: `The most recent workouts are: ${workouts.map(({ display }) => display).join(', ')}`,
-        });
+        if (workouts.length) {
+            postLocalNotification({
+                title: 'New Workout',
+                body: `The most recent workouts are: ${workouts.map(({ display }) => display).join(', ')}`,
+            });
+        }
     });
     subscribeHealthKitEvents(HealthKitEventRegistry.QueryStatusHasChanged, async (status: ServiceStatus) => {
         stateTree.serviceStatus.updateHealthKitServiceStatus(status);

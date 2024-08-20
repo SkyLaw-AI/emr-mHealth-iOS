@@ -66,7 +66,9 @@ class HealthKitConnector: NSObject {
   private override init() {
     super.init()
     store.requestAuthorization(toShare: [],
-                               read: [HKObjectType.workoutType(), HKObjectType.activitySummaryType()]) { _,_ in }
+                               read: [HKObjectType.workoutType(),
+                                      HKQuantityType(.stepCount),
+                                      HKObjectType.activitySummaryType()]) { _,_ in }
   }
 
   @objc class func sharedInstance() -> HealthKitConnector {
@@ -93,30 +95,15 @@ class HealthKitConnector: NSObject {
       logger.error("Attempted to launch query while another is in progress")
       return
     }
-    store.requestAuthorization(toShare: [], read: [HKObjectType.workoutType()]) { _,_ in
+    store.requestAuthorization(toShare: [], read: [HKObjectType.workoutType(),
+                                                   HKQuantityType(.stepCount)]) { _,_ in
       let timeLimitPredicate = HKQuery.predicateForSamples(
         withStart: Calendar.current.date(byAdding: .day, value: -7, to: .now), end: nil, options: []
       )
-      let query = HKObserverQuery(sampleType: HKQuantityType.workoutType(),
-                                  predicate: timeLimitPredicate) { (query, completionHandler, errorOrNil) in
-        if let error = errorOrNil {
-          logger.error("Observer query has failed with error: \(error)")
-          completionHandler()
-          return
-        }
-        let anchoredQuery = HKAnchoredObjectQuery(type: HKQuantityType.workoutType(),
-                                                  predicate: timeLimitPredicate,
-                                                  anchor: self.queryAnchor,
-                                                  limit: HKObjectQueryNoLimit) {_, created, removed, anchor, error in
-          self.storeUpdateHandler(created, removed, anchor, error)
-        }
-        anchoredQuery.updateHandler = {_, created, removed, anchor, error in
-          self.storeUpdateHandler(created, removed, anchor, error)
-        }
-        self.store.execute(anchoredQuery)
-        self.observerQueryCompletionHandler = completionHandler
-      }
-      self.store.execute(query)
+      let query = self.runObserverQuery(for: [
+        HKQueryDescriptor(sampleType: HKQuantityType.workoutType(), predicate: timeLimitPredicate),
+        HKQueryDescriptor(sampleType: HKQuantityType(.stepCount), predicate: timeLimitPredicate),
+      ])
       self.runningQuery = query
       self.store.enableBackgroundDelivery(for: HKQuantityType.workoutType(), frequency: .immediate) {_,error in
         if error != nil {
@@ -167,6 +154,28 @@ class HealthKitConnector: NSObject {
       }
       self.store.execute(query)
     }
+  }
+
+  private func runObserverQuery(for queryDescriptors: [HKQueryDescriptor]) -> HKObserverQuery {
+    let query =  HKObserverQuery(queryDescriptors: queryDescriptors) { (query, samples, completionHandler, errorOrNil) in
+      if let error = errorOrNil {
+        logger.error("Observer query has failed with error: \(error)")
+        completionHandler()
+        return
+      }
+      let anchoredQuery = HKAnchoredObjectQuery(queryDescriptors: queryDescriptors,
+                                                anchor: self.queryAnchor,
+                                                limit: HKObjectQueryNoLimit) {_, created, removed, anchor, error in
+        self.storeUpdateHandler(created, removed, anchor, error)
+      }
+      anchoredQuery.updateHandler = {_, created, removed, anchor, error in
+        self.storeUpdateHandler(created, removed, anchor, error)
+      }
+      self.store.execute(anchoredQuery)
+      self.observerQueryCompletionHandler = completionHandler
+    }
+    self.store.execute(query)
+    return query
   }
 
   private func storeUpdateHandler(_ samplesCreated: [HKSample]?,
@@ -242,8 +251,13 @@ extension HKSample {
     switch self {
     case let workout as HKWorkout:
       return workout.activityDisplay.lowercased().replacingOccurrences(of: " ", with: "-")
-    case _ as HKQuantitySample:
-      return nil
+    case let quantity as HKQuantitySample:
+      switch quantity.quantityType {
+      case HKQuantityType(.stepCount):
+        return "steps"
+      default:
+        return nil
+      }
     case _ as HKCategorySample:
       return nil
     case _ as HKCorrelation:
@@ -257,8 +271,13 @@ extension HKSample {
     switch self {
     case let workout as HKWorkout:
       return workout.activityDisplay
-    case _ as HKQuantitySample:
-      return nil
+    case let quantity as HKQuantitySample:
+      switch quantity.quantityType {
+      case HKQuantityType(.stepCount):
+        return "Steps"
+      default:
+        return nil
+      }
     case _ as HKCategorySample:
       return nil
     case _ as HKCorrelation:
@@ -272,8 +291,13 @@ extension HKSample {
     switch self {
     case _ as HKWorkout:
       return "workout"
-    case _ as HKQuantitySample:
-      return nil
+    case let quantity as HKQuantitySample:
+      switch quantity.quantityType {
+      case HKQuantityType(.stepCount):
+        return "steps"
+      default:
+        return nil
+      }
     case _ as HKCategorySample:
       return nil
     case _ as HKCorrelation:
@@ -297,8 +321,13 @@ extension HKSample {
         )
       }
       return workoutDetails
-    case _ as HKQuantitySample:
-      return [:]
+    case let quantity as HKQuantitySample:
+      switch quantity.quantityType {
+      case HKQuantityType(.stepCount):
+        return ["count": quantity.quantity.doubleValue(for: .count())]
+      default:
+        return [:]
+      }
     case _ as HKCategorySample:
       return [:]
     case _ as HKCorrelation:

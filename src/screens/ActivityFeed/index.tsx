@@ -6,6 +6,7 @@ import { NavigationComponentProps } from 'react-native-navigation';
 import { useStateTree } from 'models';
 import { signout } from 'services/auth';
 import { Button } from 'components/Button';
+import { ActivitySampleCategory } from 'models/activity';
 
 import { ActivityFeedItem, ActivityFeedSection, useActivityFeed } from './hooks';
 import s from './styles';
@@ -76,14 +77,36 @@ function ActivityFeedSectionItem({ item: activity }: { item: ActivityFeedItem })
     return (
         <View style={s.sectionItem}>
             <View style={s.sectionItemActivity}>
-                <Text style={s.sectionItemActivityLabelText}>{activity.sample.display}</Text>
-                {activity.sample.activeEnergyBurned !== undefined ? (
-                    <Text style={s.sectionItemActivityDetailsText}>
-                        {Math.round(activity.sample.activeEnergyBurned)} kcal
-                    </Text>
-                ) : undefined}
+                <ActivityFeedSectionTitle activity={activity} />
             </View>
-            <Text style={s.sectionItemActivityDetailsText}>{activity.duration}</Text>
+            <ActivityFeedSectionDetails activity={activity} />
         </View>
     );
+}
+
+function ActivityFeedSectionTitle({ activity }: { activity: ActivityFeedItem }) {
+    switch (activity.sample.category) {
+        case ActivitySampleCategory.Workout:
+            return (
+                <>
+                    <Text style={s.sectionItemActivityLabelText}>{activity.sample.display}</Text>
+                    {activity.sample.activeEnergyBurned !== undefined ? (
+                        <Text style={s.sectionItemActivityDetailsText}>
+                            {Math.round(activity.sample.activeEnergyBurned)} kcal
+                        </Text>
+                    ) : undefined}
+                </>
+            );
+        case ActivitySampleCategory.Steps:
+            return <Text style={s.sectionItemActivityLabelText}>{activity.sample.display}</Text>;
+    }
+}
+
+function ActivityFeedSectionDetails({ activity }: { activity: ActivityFeedItem }) {
+    switch (activity.sample.category) {
+        case ActivitySampleCategory.Workout:
+            return <Text style={s.sectionItemActivityDetailsText}>{activity.duration}</Text>;
+        case ActivitySampleCategory.Steps:
+            return <Text style={s.sectionItemActivityDetailsText}>{activity.count}</Text>;
+    }
 }

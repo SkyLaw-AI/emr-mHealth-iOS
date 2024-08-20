@@ -1,6 +1,7 @@
 import { Instance, types } from 'mobx-state-tree';
 
 const WORKOUTS_HISTORY_TO_KEEP = 30;
+const STEPS_HISTORY_TO_KEEP = 30;
 
 const ActivitySummaryModel = types.model('ActivitySummaryModel').props({
     activeEnergyBurned: types.maybe(types.number),
@@ -17,6 +18,7 @@ export interface ActivitySummary extends Instance<typeof ActivitySummaryModel> {
 
 export enum ActivitySampleCategory {
     Workout = 'workout',
+    Steps = 'steps',
 }
 
 const ActivitySampleModel = types.model('ActivitySampleModel').props({
@@ -37,14 +39,22 @@ const WorkoutSampleModel = types.model('WorkoutSampleModel').props({
     activeEnergyBurned: types.maybe(types.number),
 });
 
+const StepsSampleModel = types.model('StepsSampleModel').props({
+    category: types.literal(ActivitySampleCategory.Steps),
+    count: types.number,
+});
+
 const WorkoutModel = types.compose('WorkoutModel', ActivitySampleModel, WorkoutSampleModel);
+const StepsModel = types.compose('StepsModel', ActivitySampleModel, StepsSampleModel);
 
 export interface Workout extends Instance<typeof WorkoutModel> {}
+export interface Steps extends Instance<typeof StepsModel> {}
 
 export const ActivityModel = types
     .model('ActivityModel')
     .props({
         workouts: types.array(WorkoutModel),
+        steps: types.array(StepsModel),
         summary: types.maybe(ActivitySummaryModel),
     })
     .actions((self) => ({
@@ -60,11 +70,24 @@ export const ActivityModel = types
                 }
             }
         },
+        pushSteps: (steps: Steps[]) => {
+            for (const stepsSample of steps) {
+                const existingStepsSample = self.steps.find((w) => w.id === stepsSample.id);
+                if (existingStepsSample) {
+                    continue;
+                }
+                self.steps.push(stepsSample);
+                if (self.steps.length > STEPS_HISTORY_TO_KEEP) {
+                    self.steps.shift();
+                }
+            }
+        },
         updateSummary: (summary: ActivitySummary | undefined) => {
             self.summary = summary;
         },
         clear: () => {
             self.workouts.splice(0, self.workouts.length);
+            self.steps.splice(0, self.steps.length);
             self.summary = undefined;
         },
     }));
