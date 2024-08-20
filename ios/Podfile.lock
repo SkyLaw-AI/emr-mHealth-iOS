@@ -78,10 +78,6 @@ PODS:
   - hermes-engine/Pre-built (0.71.7)
   - HMSegmentedControl (1.5.6)
   - libevent (2.1.12)
-  - metriport-react-native (1.1.1):
-    - MetriportSDK
-    - React-Core
-  - MetriportSDK (1.0.28)
   - OpenSSL-Universal (1.1.1100)
   - RCT-Folly (2021.07.22.00):
     - boost
@@ -477,7 +473,6 @@ DEPENDENCIES:
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - libevent (~> 2.1.12)
-  - "metriport-react-native (from `../node_modules/@metriport/react-native-sdk`)"
   - OpenSSL-Universal (= 1.1.1100)
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCTRequired (from `../node_modules/react-native/Libraries/RCTRequired`)
@@ -531,7 +526,6 @@ SPEC REPOS:
     - fmt
     - HMSegmentedControl
     - libevent
-    - MetriportSDK
     - OpenSSL-Universal
     - Sentry
     - SentryPrivate
@@ -551,8 +545,6 @@ EXTERNAL SOURCES:
     :podspec: "../node_modules/react-native/third-party-podspecs/glog.podspec"
   hermes-engine:
     :podspec: "../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec"
-  metriport-react-native:
-    :path: "../node_modules/@metriport/react-native-sdk"
   RCT-Folly:
     :podspec: "../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec"
   RCTRequired:
@@ -642,8 +634,6 @@ SPEC CHECKSUMS:
   hermes-engine: 4438d2b8bf8bebaba1b1ac0451160bab59e491f8
   HMSegmentedControl: 34c1f54d822d8308e7b24f5d901ec674dfa31352
   libevent: 4049cae6c81cdb3654a443be001fb9bdceff7913
-  metriport-react-native: 2910b5dac653fb32ae30f538c691d3861f9fe8aa
-  MetriportSDK: 2cbf59a74c7e282420358eeb6130ff0df13f47bb
   OpenSSL-Universal: ebc357f1e6bc71fa463ccb2fe676756aff50e88c
   RCT-Folly: 424b8c9a7a0b9ab2886ffe9c3b041ef628fd4fb1
   RCTRequired: 467cd79889cbcfd008d0ff7c697f73765d4578c3

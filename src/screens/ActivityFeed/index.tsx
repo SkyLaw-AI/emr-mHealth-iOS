@@ -11,11 +11,10 @@ import { ActivitySampleCategory } from 'models/activity';
 
 import { ActivityFeedItem, ActivityFeedSection, useActivityFeed } from './hooks';
 import s from './styles';
-import { pushToMetriportScreen } from 'screens/MetriportConnect/navigation';
 
 export interface ActivityFeedProps {}
 
-export const ActivityFeed: FC<ActivityFeedProps & NavigationComponentProps> = observer(function ActivityFeed(props) {
+export const ActivityFeed: FC<ActivityFeedProps & NavigationComponentProps> = observer(function ActivityFeed() {
     const { user, activity, serviceStatus } = useStateTree();
     const { activities, ...controllers } = useActivityFeed(activity, serviceStatus);
 
@@ -28,7 +27,6 @@ export const ActivityFeed: FC<ActivityFeedProps & NavigationComponentProps> = ob
                         <Text style={s.title}>Activity</Text>
                     </View>
                     <View style={s.headerControls}>
-                        <Button icon={'plus'} onPress={() => pushToMetriportScreen(props.componentId, {})} />
                         {controllers.isRunning ? (
                             <Button icon={'stop'} onPress={controllers.stop} />
                         ) : (
