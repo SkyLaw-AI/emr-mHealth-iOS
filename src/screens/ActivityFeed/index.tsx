@@ -1,7 +1,8 @@
 import React, { FC } from 'react';
 import { observer } from 'mobx-react-lite';
-import { SafeAreaView, StatusBar, Text, View, SectionList, SectionListData } from 'react-native';
+import { SafeAreaView, StatusBar, Text, View, SectionList, SectionListData, Dimensions } from 'react-native';
 import { NavigationComponentProps } from 'react-native-navigation';
+import { LineChart } from 'react-native-chart-kit';
 
 import { useStateTree } from 'models';
 import { signout } from 'services/auth';
@@ -63,11 +64,23 @@ export const ActivityFeed: FC<ActivityFeedProps & NavigationComponentProps> = ob
 });
 
 function ActivityFeedSectionHeader(props: { section: SectionListData<ActivityFeedItem, ActivityFeedSection> }) {
+    const steps = props.section.data
+        .filter((d) => d.sample.category === ActivitySampleCategory.Steps)
+        .map((d) => d.count ?? 0)
+        .reverse();
+
+    const workouts = props.section.data
+        .filter((d) => d.sample.category === ActivitySampleCategory.Workout)
+        .map((d) => d.count ?? 0)
+        .reverse();
+
     return (
         <View style={s.sectionHeader}>
             <View style={s.sectionHeaderTitle}>
                 <Text style={s.sectionHeaderTitleText}>{props.section.title}</Text>
             </View>
+            {steps.length ? <ActivityChart labels={['Steps']} measurements={steps} /> : null}
+            {workouts.length ? <ActivityChart labels={['Workouts']} measurements={workouts} /> : null}
         </View>
     );
 }
@@ -116,4 +129,31 @@ function ActivityFeedSectionDetails({ activity }: { activity: ActivityFeedItem }
         case ActivitySampleCategory.Steps:
             return <Text style={s.sectionItemActivityDetailsText}>{activity.count}</Text>;
     }
+}
+
+function ActivityChart({ labels, measurements }: { labels: string[]; measurements: number[] }) {
+    return (
+        <LineChart
+            fromZero
+            data={{
+                labels: labels,
+                datasets: [
+                    {
+                        data: measurements,
+                    },
+                ],
+            }}
+            width={Dimensions.get('window').width}
+            height={200}
+            chartConfig={{
+                backgroundGradientFromOpacity: 0,
+                backgroundGradientToOpacity: 0,
+                color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                style: {
+                    backgroundColor: s.safeArea.backgroundColor,
+                },
+                decimalPlaces: 0,
+            }}
+        />
+    );
 }

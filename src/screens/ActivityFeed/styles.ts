@@ -38,6 +38,7 @@ export default StyleSheet.create({
     sectionHeader: {
         alignItems: 'center',
         justifyContent: 'center',
+        gap: 20,
     },
     sectionHeaderTitle: {
         backgroundColor: 'white',
