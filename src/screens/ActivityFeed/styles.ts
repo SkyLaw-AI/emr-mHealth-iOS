@@ -87,4 +87,15 @@ export default StyleSheet.create({
         fontWeight: '400',
         textAlign: 'center',
     },
+    emptyScreenContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
+    },
+    emptyScreenText: {
+        ...font.primary,
+        fontSize: 27,
+        lineHeight: 36,
+        fontWeight: '400',
+    },
 });

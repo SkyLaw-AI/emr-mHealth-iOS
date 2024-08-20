@@ -36,16 +36,23 @@ export const ActivityFeed: FC<ActivityFeedProps & NavigationComponentProps> = ob
                         <Button icon={'rotate-right'} onPress={controllers.reset} />
                     </View>
                 </View>
-                <SectionList
-                    sections={activities}
-                    keyExtractor={({ sample }) => sample.id}
-                    renderSectionHeader={ActivityFeedSectionHeader}
-                    renderItem={ActivityFeedSectionItem}
-                    renderSectionFooter={ActivityFeedSectionFooter}
-                    style={s.sectionList}
-                    contentContainerStyle={s.sectionListContent}
-                    showsVerticalScrollIndicator={false}
-                />
+                {activities.length ? (
+                    <SectionList
+                        sections={activities}
+                        keyExtractor={({ sample }) => sample.id}
+                        renderSectionHeader={ActivityFeedSectionHeader}
+                        renderItem={ActivityFeedSectionItem}
+                        renderSectionFooter={ActivityFeedSectionFooter}
+                        style={s.sectionList}
+                        contentContainerStyle={s.sectionListContent}
+                        showsVerticalScrollIndicator={false}
+                        stickySectionHeadersEnabled={false}
+                    />
+                ) : (
+                    <View style={s.emptyScreenContainer}>
+                        <Text style={s.emptyScreenText}>No Data</Text>
+                    </View>
+                )}
                 <View style={s.signInContainer}>
                     <Button onPress={signout} label="Sign out" />
                     <Text style={s.footnote}>Signed in as: {user.name ?? 'N/A'}</Text>
